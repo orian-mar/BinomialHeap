@@ -86,7 +86,8 @@ public class BinomialHeap {
 		min.next = null;
 		min.child = null;
 		min = this.getNewMin(last);
-		this.meld(heap2);
+		heap2.meld(this);
+		this.updateHeap(heap2.size(), heap2.last, heap2.min, heap2.numTrees());
 	}
 
 
