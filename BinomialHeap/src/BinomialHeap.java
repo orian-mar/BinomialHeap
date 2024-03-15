@@ -26,10 +26,10 @@ public class BinomialHeap {
 	 */
 	public HeapItem insert(int key, String info) {
 		HeapItem item = new HeapItem(key, info);
+		item.node.next = item.node;
 		BinomialHeap temp = new BinomialHeap();
 		temp.updateHeap(1, item.node, item.node, 1);
 		this.meld(temp);
-		this.size++;
 		return item;
 	}
 
@@ -54,6 +54,22 @@ public class BinomialHeap {
 	 * Delete the minimal item
 	 */
 	public void deleteMin() {
+		HeapNode prev = min.getBro();
+		if (last == min){
+			last = prev;
+		}
+
+		if (min.child == null) {
+			if (this.numTrees() == 1) {
+				this.updateHeap(0, null, null, 0);
+				return;
+			}
+			prev.next = min.next;
+			min.next = null;
+			this.updateHeap(this.size()-1, last, this.getNewMin(last), this.numTrees()-1);
+			return;
+		}
+
 		HeapNode min2 = this.getNewMin(min.child);
 		BinomialHeap heap2 = new BinomialHeap();
 		heap2.updateHeap((int)Math.pow(2, min.rank)-1, min.child, min2, min.rank);
@@ -65,11 +81,7 @@ public class BinomialHeap {
 			return;
 		}
 
-		HeapNode prev = min.getBro();
-		if (last == min){
-			last = prev;
-		}
-
+		this.size = this.size - heap2.size - 1;
 		prev.next = min.next;
 		min.next = null;
 		min.child = null;
@@ -92,6 +104,9 @@ public class BinomialHeap {
 
 
 	public HeapItem findMin() {
+		if (this.min == null) {
+			return null;
+		}
 		return this.min.item;
 	}
 
@@ -138,7 +153,7 @@ public class BinomialHeap {
 	public void makeForest(BinomialHeap heap2) {
 		HeapNode node1 = this.last;
 		HeapNode node2 = heap2.last;
-		int counter1 = 0;
+		int counter1 = 1;
 		int counter2 = 0;
 		HeapNode next2;
 		while (counter1 < this.numTrees() && counter2 <= heap2.numTrees()) {
@@ -210,6 +225,7 @@ public class BinomialHeap {
 					newLast = next;
 				}
 				this.updateHeap(this.size() + heap2.size(), newLast, HeapNode.minNode(this.min, heap2.min), 2);
+				return;
 			}
 		}
 		this.updateHeap(this.size() + heap2.size(), curr, HeapNode.minNode(this.min, heap2.min), numOfBothTrees - countOfLinks);
@@ -272,18 +288,20 @@ public class BinomialHeap {
 			}
 			if (node1.child == null) {
 				node2.next = node2;
-			} else {
+			}
+			else {
 				node2.next = node1.child.next;
 				node1.child.next = node2;
 			}
 			node1.child = node2;
 			node2.parent = node1;
+			node1.rank++;
 			return node1;
 		}
 
 		public HeapNode getBro(){
 			HeapNode curr = this.next;
-			while (curr != this){
+			while (curr.next != this){
 				curr = curr.next;
 			}
 			return curr;
@@ -304,6 +322,44 @@ public class BinomialHeap {
 			this.info = info;
 			this.node = new HeapNode();
 			this.node.item = this;
+		}
+	}
+
+	public void printHeap() {
+		if (empty()) {
+			System.out.println("Heap is empty");
+			return;
+		}
+		System.out.println("Binomial Heap:");
+		HeapNode currentRoot = last;
+		HeapNode stopNode = last.next; // Stop condition for circular list of roots
+		boolean stop = false;
+
+		do {
+			System.out.println("Root: " + currentRoot.item.key);
+			printTree(currentRoot, 0, currentRoot); // Print the tree rooted at current root
+			currentRoot = currentRoot.next;
+			if (currentRoot == stopNode) {
+				stop = true; // We've visited all roots
+			}
+		} while (!stop);
+	}
+
+	private void printTree(HeapNode node, int depth, HeapNode initialRoot) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < depth; i++) {
+			sb.append("  "); // Adjust spacing for depth
+		}
+		sb.append(node.item.key).append(" [").append(node.rank).append("]");
+
+		System.out.println(sb.toString());
+
+		if (node.child != null) {
+			printTree(node.child, depth + 1, node.child); // Print child recursively
+		}
+
+		if (node.next != node.parent && node.next != null && node.next != initialRoot) {
+			printTree(node.next, depth, initialRoot); // Print sibling recursively until we reach the initial root
 		}
 	}
 
