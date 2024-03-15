@@ -325,43 +325,4 @@ public class BinomialHeap {
 			this.node.item = this;
 		}
 	}
-
-	public void printHeap() {
-		if (empty()) {
-			System.out.println("Heap is empty");
-			return;
-		}
-		System.out.println("Binomial Heap:");
-		HeapNode currentRoot = last;
-		HeapNode stopNode = last.next; // Stop condition for circular list of roots
-		boolean stop = false;
-
-		do {
-			System.out.println("Root: " + currentRoot.item.key);
-			printTree(currentRoot, 0, currentRoot); // Print the tree rooted at current root
-			currentRoot = currentRoot.next;
-			if (currentRoot == stopNode) {
-				stop = true; // We've visited all roots
-			}
-		} while (!stop);
-	}
-
-	private void printTree(HeapNode node, int depth, HeapNode initialRoot) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < depth; i++) {
-			sb.append("  "); // Adjust spacing for depth
-		}
-		sb.append(node.item.key).append(" [").append(node.rank).append("]");
-
-		System.out.println(sb.toString());
-
-		if (node.child != null) {
-			printTree(node.child, depth + 1, node.child); // Print child recursively
-		}
-
-		if (node.next != node.parent && node.next != null && node.next != initialRoot) {
-			printTree(node.next, depth, initialRoot); // Print sibling recursively until we reach the initial root
-		}
-	}
-
 }
