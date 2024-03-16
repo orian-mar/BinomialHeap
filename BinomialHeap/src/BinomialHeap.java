@@ -1,4 +1,8 @@
-
+// username:
+// name1: Orian Marmelstein
+// id1: 207860487
+// name2: Lilach Chay
+// id2: 322270513
 
 /**
  * BinomialHeap
@@ -12,6 +16,10 @@ public class BinomialHeap {
 	public HeapNode min;
 	public int numberOfTrees;
 
+	/**
+	 * Update thisHeap fields
+	 * Time Complexity: O(1)
+	 */
 
 	public void updateHeap(int size, HeapNode last, HeapNode min, int numberOfTrees) {
 		this.size = size;
@@ -25,13 +33,45 @@ public class BinomialHeap {
 	 * pre: key > 0
 	 * <p>
 	 * Insert (key,info) into the heap and return the newly generated HeapItem.
+	 *
+	 * Time Complexity: O(log n) w.c
 	 */
+
 	public HeapItem insert(int key, String info) {
 		HeapItem item = new HeapItem(key, info);
-		item.node.next = item.node;
-		BinomialHeap temp = new BinomialHeap();
-		temp.updateHeap(1, item.node, item.node, 1);
-		this.meld(temp);
+		HeapNode realLast = this.last;
+		this.addTree(item.node);
+
+		if (realLast != null) {
+			this.last = realLast;
+		}
+		if (this.numTrees() == 1) {
+			return item;
+		}
+
+		HeapNode prev = this.last;
+		HeapNode curr = this.last.next;
+		HeapNode next = curr.next;
+		HeapNode cont, newNode;
+
+		while(curr.rank == next.rank && this.numTrees() != 2) {
+			cont = next.next;
+			newNode = HeapNode.link(curr, next);
+			this.numberOfTrees--;
+			prev.next = newNode;
+			newNode.next = cont;
+			curr = newNode;
+			next = cont;
+		}
+
+		if(this.numTrees() == 2) {
+			if (curr.rank == next.rank) {
+				newNode = HeapNode.link(curr, next);
+				newNode.next = newNode;
+				this.updateHeap(this.size(), newNode, newNode, 1);
+			}
+		}
+		this.min = HeapNode.getMinRoot(this.min);
 		return item;
 	}
 
@@ -56,6 +96,7 @@ public class BinomialHeap {
 	 * Delete the minimal item
 	 */
 	public void deleteMin() {
+
 		if (this.empty()) {
 			return;
 		}
@@ -147,7 +188,7 @@ public class BinomialHeap {
 	public void delete(HeapItem item) {
 		int decrease = this.findMin().key - 1;
 		this.decreaseKey(item, item.key - decrease);
-		this.deleteMin();
+		deleteMin();
 	}
 
 	public void addTree(HeapNode node)
@@ -194,23 +235,24 @@ public class BinomialHeap {
 				counter2++;
 			}
 		}
- 		//if we went through all of heap2 but more trees remain in heap1, add them to the forest
-			while (counter1 < this.numTrees()) {
-				next1 = node1.next;
-				forest.addTree(node1);
-				node1 = next1;
-				counter1++;
-			}
+		//if we went through all of heap2 but more trees remain in heap1, add them to the forest
+		while (counter1 < this.numTrees()) {
+			next1 = node1.next;
+			forest.addTree(node1);
+			node1 = next1;
+			counter1++;
+		}
 		//if we went through all of heap1 but more trees remain in heap2, add them to the forest
-			while (counter2 < heap2.numTrees()) {
-				next2 = node2.next;
-				forest.addTree(node2);
-				node2 = next2;
-				counter2++;
-			}
-			//this.heap becomes the forest
-			this.updateHeap(forest.size, forest.last, forest.min, forest.numberOfTrees);
+		while (counter2 < heap2.numTrees()) {
+			next2 = node2.next;
+			forest.addTree(node2);
+			node2 = next2;
+			counter2++;
+		}
+		//this.heap becomes the forest
+		this.updateHeap(forest.size, forest.last, forest.min, forest.numberOfTrees);
 	}
+
 
 	public void meld(BinomialHeap heap2) {
 		int numOfBothTrees = this.numTrees() + heap2.numTrees();
@@ -257,12 +299,12 @@ public class BinomialHeap {
 				} else {
 					newLast = next;
 				}
-				this.updateHeap(this.size(), newLast, HeapNode.minNode(this.min, heap2.min), 2);
+				this.updateHeap(this.size(), newLast, HeapNode.getMinRoot(this.min), 2);
 			}
 			return;
 		}
 		if (curr.rank != next.rank) {
-			this.updateHeap(this.size(), last, HeapNode.minNode(this.min, heap2.min), numOfBothTrees - countOfLinks);
+			this.updateHeap(this.size(), last, HeapNode.getMinRoot(this.min), numOfBothTrees - countOfLinks);
 			return;
 		}
 		HeapNode first = next.next;
@@ -270,7 +312,7 @@ public class BinomialHeap {
 		prev.next = lastNode;
 		lastNode.next = first;
 		countOfLinks++;
-		this.updateHeap(this.size(), lastNode, HeapNode.minNode(this.min, heap2.min), numOfBothTrees - countOfLinks);
+		this.updateHeap(this.size(), lastNode, HeapNode.getMinRoot(this.min), numOfBothTrees - countOfLinks);
 	}
 
 	public int size() {
@@ -282,10 +324,7 @@ public class BinomialHeap {
 	 * is empty.
 	 */
 	public boolean empty() {
-		if (this.size() == 0) {
-			return true;
-		}
-		return false; // should be replaced by student code
+		return this.size() == 0;
 	}
 
 	/**
@@ -310,14 +349,20 @@ public class BinomialHeap {
 			return this.item.key;
 		}
 
-		public static HeapNode minNode(HeapNode min1, HeapNode min2){
-			if (min1.getKey() < min2.getKey() || min2.parent != null){ //if min1=min2 and they have the same rank, one might be the child of the other
-				return min1;
-			} else{
-
-				return min2;
-			}
+		public static HeapNode getMinRoot(HeapNode min) {
+			while(min.parent != null)
+				min = min.parent;
+			return min;
 		}
+
+//		public static HeapNode minNode(HeapNode min1, HeapNode min2){
+//			if (min1.getKey() < min2.getKey() || min2.parent != null){ //if min1=min2 and they have the same rank, one might be the child of the other
+//				return min1;
+//			} else{
+//
+//				return min2;
+//			}
+//		}
 
 		public static HeapNode link(HeapNode node1, HeapNode node2) {
 			if (node1.getKey() > node2.getKey()) { //suppose node1 =< node2
