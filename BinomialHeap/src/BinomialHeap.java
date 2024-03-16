@@ -18,9 +18,9 @@ public class BinomialHeap {
 
 	/**
 	 * Update thisHeap fields
+	 *
 	 * Time Complexity: O(1)
 	 */
-
 	public void updateHeap(int size, HeapNode last, HeapNode min, int numberOfTrees) {
 		this.size = size;
 		this.last = last;
@@ -36,24 +36,24 @@ public class BinomialHeap {
 	 *
 	 * Time Complexity: O(log n) w.c
 	 */
-
 	public HeapItem insert(int key, String info) {
 		HeapItem item = new HeapItem(key, info);
 		HeapNode realLast = this.last;
-		this.addTree(item.node);
+		this.addTree(item.node); //connect the node to the heap (as last tree)
 
 		if (realLast != null) {
-			this.last = realLast;
+			this.last = realLast; //the inserted node.rank is 0, so we want it to be first
 		}
-		if (this.numTrees() == 1) {
+		if (this.numTrees() == 1) { //if the heap was empty before, we can finish
 			return item;
 		}
 
 		HeapNode prev = this.last;
-		HeapNode curr = this.last.next;
+		HeapNode curr = this.last.next; //our inserted tree
 		HeapNode next = curr.next;
 		HeapNode cont, newNode;
 
+		//check if linking are needed after adding the tree
 		while(curr.rank == next.rank && this.numTrees() != 2) {
 			cont = next.next;
 			newNode = HeapNode.link(curr, next);
@@ -76,6 +76,13 @@ public class BinomialHeap {
 	}
 
 
+	/**
+	 * Return the min HeapNode in the level of this node's brothers (in current tree)
+	 * Used in deleteMin() for finding the new min of this heap and
+	 * the min of children heap before melding them
+	 *
+	 * Time Complexity: O(log n)
+	 */
 	public HeapNode getNewMin(HeapNode node){
 		HeapNode currMin = node;
 		int currMinNum = node.getKey();
@@ -91,52 +98,13 @@ public class BinomialHeap {
 	}
 
 
-
 	/**
-	 * Delete the minimal item
+	 *
+	 * Detach the node and his brothers from their parent
+	 * Used in deleteMin() for detaching the children heap
+	 *
+	 * Time Complexity: O(log n)
 	 */
-	public void deleteMin() {
-
-		if (this.empty()) {
-			return;
-		}
-		HeapNode prev = min.getBro();
-		if (last == min){
-			last = prev;
-		}
-
-		if (min.child == null) {
-			if (this.numTrees() == 1) {
-				this.updateHeap(0, null, null, 0);
-				return;
-			}
-			prev.next = min.next;
-			min.next = null;
-			this.updateHeap(this.size()-1, last, this.getNewMin(last), this.numTrees()-1);
-			return;
-		}
-
-		HeapNode min2 = this.getNewMin(min.child);
-		BinomialHeap heap2 = new BinomialHeap();
-		heap2.updateHeap((int)Math.pow(2, min.rank)-1, min.child, min2, min.rank);
-		resetParent(min.child);
-
-		if (this.numTrees() == 1){
-			this.updateHeap(0, null, null, 0);
-			this.meld(heap2);
-			return;
-		}
-
-		this.size = this.size - heap2.size - 1;
-		this.numberOfTrees--;
-		prev.next = min.next;
-		min.next = null;
-		min.child = null;
-		min = this.getNewMin(last);
-		heap2.meld(this);
-		this.updateHeap(heap2.size(), heap2.last, heap2.min, heap2.numTrees());
-	}
-
 	public static void resetParent(HeapNode node){
 		while (node.parent != null){
 			node.parent = null;
@@ -144,11 +112,65 @@ public class BinomialHeap {
 		}
 	}
 
+
+	/**
+	 * Delete the minimal item
+	 *
+	 * Time Complexity: O(log n)
+	 */
+	public void deleteMin() {
+
+		if (this.empty()) {
+			return;
+		}
+
+		HeapNode prev = min.getBro();
+		if (last == min){
+			last = prev; //if minNode was last - save the newLast before detaching the min
+		}
+
+		//check if minNode.rank is 0 (meld is not needed)
+		if (min.child == null) {
+			if (this.numTrees() == 1) { //if min is the only node - empty the whole heap and break
+				this.updateHeap(0, null, null, 0);
+				return;
+			}
+			//detach min and update the heap
+			prev.next = min.next;
+			min.next = null;
+			this.updateHeap(this.size()-1, last, this.getNewMin(last), this.numTrees()-1);
+			return;
+		}
+		//create children heap and detach them from min
+		HeapNode min2 = this.getNewMin(min.child);
+		BinomialHeap heap2 = new BinomialHeap();
+		heap2.updateHeap((int)Math.pow(2, min.rank)-1, min.child, min2, min.rank);
+		resetParent(min.child);
+
+		//if min.tree was alone in the heap - the children heap will replace the original
+		if (this.numTrees() == 1){
+			this.updateHeap(heap2.size(), heap2.last, heap2.findMin().node, heap2.numTrees());
+			return;
+		}
+
+		//detach children heap and update this.heap
+		this.size = this.size - heap2.size - 1;
+		this.numberOfTrees--;
+		prev.next = this.min.next;
+		this.min.next = null;
+		this.min.child = null;
+		this.min = this.getNewMin(last);
+
+		//meld heap2 into this.heap
+		this.meld(heap2);
+	}
+
+
 	/**
 	 * Return the minimal HeapItem
+	 *
+	 * Time Complexity: O(1)
 	 */
-
-
 	public HeapItem findMin() {
 		if (this.min == null) {
 			return null;
@@ -157,10 +179,17 @@ public class BinomialHeap {
 	}
 
 
+	/**
+	 * Move up the item to the correct level in the tree according to its key
+	 * Used in decreaseKey()
+	 *
+	 * Time Complexity: O(log n)
+	 */
 	public void heapifyUp(HeapItem pointer) {
-		HeapNode temp;
 		HeapNode parent = pointer.node.parent;
+
 		while (parent != null && pointer.key < parent.getKey()) {
+			//the HeapNode represent the place in the tree, so we replace only the items
 			pointer.node.item = parent.item;
 			parent.item.node = pointer.node;
 			parent.item = pointer;
@@ -173,6 +202,8 @@ public class BinomialHeap {
 	 * pre: 0 < diff < item.key
 	 * <p>
 	 * Decrease the key of item by diff and fix the heap.
+	 *
+	 * Time Complexity: O(log n)
 	 */
 	public void decreaseKey(HeapItem item, int diff) {
 		item.key = item.key - diff;
@@ -183,17 +214,27 @@ public class BinomialHeap {
 	}
 
 	/**
-	 * Delete the item from the heap.
+	 * Delete the item from the heap
+	 *
+	 * Time Complexity: O(log n)
 	 */
 	public void delete(HeapItem item) {
+		//Change the item into being the new minimum (and then deleteMin)
 		int decrease = this.findMin().key - 1;
 		this.decreaseKey(item, item.key - decrease);
 		deleteMin();
 	}
 
+
+	/**
+	 * Add HeapNode tree to the end of this heap
+	 * Used in makeForest and insert
+	 *
+	 * Time Complexity: O(1)
+	 */
 	public void addTree(HeapNode node)
 	{
-		if (this.empty())
+		if (this.empty()) //this node will be the only tree in the heap
 		{
 			this.updateHeap((int)Math.pow(2, node.rank), node, node,1);
 			node.next = node;
@@ -201,9 +242,9 @@ public class BinomialHeap {
 		else
 		{
 			HeapNode newMin = this.min;
-			if (node.getKey() < this.min.getKey())
+			if (node.getKey() < this.min.getKey()) //check if min should be updated
 				newMin = node;
-			node.next = this.last.next;
+			node.next = this.last.next; //connect the node
 			this.last.next = node;
 			this.updateHeap(this.size +(int)Math.pow(2, node.rank), node, newMin, this.numberOfTrees + 1);
 		}
@@ -211,9 +252,11 @@ public class BinomialHeap {
 
 
 	/**
-	 * Meld the heap with heap2
+	 * Merge heap 2 into this heap while keeping the rank order
+	 * Used in Meld
+	 *
+	 * Time Complexity: O(log n)
 	 */
-
 	public void makeForest(BinomialHeap heap2) {
 		BinomialHeap forest = new BinomialHeap();
 		HeapNode node1 = this.last.next;
@@ -254,6 +297,11 @@ public class BinomialHeap {
 	}
 
 
+	/**
+	 * Meld the heap with heap2
+	 *
+	 * Time Complexity: O(log n)
+	 */
 	public void meld(BinomialHeap heap2) {
 		int numOfBothTrees = this.numTrees() + heap2.numTrees();
 		int countOfLinks = 0;
@@ -315,6 +363,12 @@ public class BinomialHeap {
 		this.updateHeap(this.size(), lastNode, HeapNode.getMinRoot(this.min), numOfBothTrees - countOfLinks);
 	}
 
+
+	/**
+	 * Return the number of elements in the heap
+	 *
+	 * Time Complexity: O(1)
+	 */
 	public int size() {
 		return this.size;
 	}
@@ -322,6 +376,8 @@ public class BinomialHeap {
 	/**
 	 * The method returns true if and only if the heap
 	 * is empty.
+	 *
+	 * Time Complexity: O(1)
 	 */
 	public boolean empty() {
 		return this.size() == 0;
@@ -329,6 +385,8 @@ public class BinomialHeap {
 
 	/**
 	 * Return the number of trees in the heap.
+	 *
+	 * Time Complexity: O(1)
 	 */
 	public int numTrees() {
 		return this.numberOfTrees;
@@ -345,27 +403,38 @@ public class BinomialHeap {
 		public HeapNode parent;
 		public int rank;
 
+		/**
+		 * Return the key of the node
+		 *
+		 * Time Complexity: O(1)
+		 *
+		 */
 		public int getKey(){
 			return this.item.key;
 		}
 
+		/**
+		 * Go to the root of the node (get the minimum root)
+		 * Used in Meld and Insert
+		 *
+		 * Time Complexity: O(1)
+		 */
 		public static HeapNode getMinRoot(HeapNode min) {
 			while(min.parent != null)
 				min = min.parent;
 			return min;
 		}
 
-//		public static HeapNode minNode(HeapNode min1, HeapNode min2){
-//			if (min1.getKey() < min2.getKey() || min2.parent != null){ //if min1=min2 and they have the same rank, one might be the child of the other
-//				return min1;
-//			} else{
-//
-//				return min2;
-//			}
-//		}
 
+		/**
+		 * Link node1 and node2 into one tree, in order
+		 * Used in Meld and Insert
+		 *
+		 * Time Complexity: O(1)
+		 */
 		public static HeapNode link(HeapNode node1, HeapNode node2) {
-			if (node1.getKey() > node2.getKey()) { //suppose node1 =< node2
+			//suppose node1 =< node2
+			if (node1.getKey() > node2.getKey()) {
 				HeapNode temp = node1;
 				node1 = node2;
 				node2 = temp;
@@ -382,6 +451,12 @@ public class BinomialHeap {
 			return node1;
 		}
 
+		/**
+		 * Return the previous brother of the node
+		 * (the one we do not have a pointer to)
+		 *
+		 * Time Complexity: O(log n)
+		 */
 		public HeapNode getBro(){
 			HeapNode curr = this.next;
 			while (curr.next != this){
