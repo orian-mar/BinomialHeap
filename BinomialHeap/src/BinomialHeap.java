@@ -1,8 +1,9 @@
-// username:
-// name1: Orian Marmelstein
-// id1: 207860487
-// name2: Lilach Chay
-// id2: 322270513
+// username1: lilachchay
+// name1 Lilach Chay
+// id1: 322270513
+//username2: orianm
+// name2: Orian Marmelstein
+// id2: 207860487
 
 /**
  * BinomialHeap
@@ -417,7 +418,7 @@ public class BinomialHeap {
 		 * Go to the root of the node (get the minimum root)
 		 * Used in Meld and Insert
 		 *
-		 * Time Complexity: O(1)
+		 * Time Complexity: O(log n)
 		 */
 		public static HeapNode getMinRoot(HeapNode min) {
 			while(min.parent != null)
