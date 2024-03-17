@@ -1,8 +1,6 @@
-lilachchay
-322270513
-Lilach Chay
-orianm
-207860487
-Orian Marmelstein
-
-
+username1: lilachchay
+id1: 322270513
+name1: Lilach Chay
+username2: orianm
+id2: 207860487
+name2: Orian Marmelstein
